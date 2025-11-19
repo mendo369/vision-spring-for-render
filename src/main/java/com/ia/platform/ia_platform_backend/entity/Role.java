@@ -1,4 +1,5 @@
-// Role.java
+// src/main/java/com/ia.platform.ia_platform_backend/entity/Role.java
+
 package com.ia.platform.ia_platform_backend.entity;
 
 import jakarta.persistence.*;

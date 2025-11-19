@@ -27,9 +27,13 @@ public class SecurityConfig {
         http.csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**").permitAll()
-                        .requestMatchers("/api/tools/**").permitAll()
-                        .anyRequest().authenticated()
+                        .requestMatchers("/api/auth/**").permitAll()  // Permitir autenticación
+                        .requestMatchers("/api/tools/**").permitAll() // Permitir acceso a herramientas
+                        .requestMatchers("/api/users/cliente").permitAll() // Permitir crear clientes
+                        .requestMatchers("/api/users/revendedor").permitAll() // Permitir crear revendedores
+                        .requestMatchers("/api/users/asesor").permitAll() // Permitir crear asesores
+                        .requestMatchers("/api/users/admin").permitAll() // Permitir crear admins
+                        .anyRequest().authenticated() // Todo lo demás requiere autenticación
                 );
 
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

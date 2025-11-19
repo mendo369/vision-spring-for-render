@@ -5,7 +5,6 @@ package com.ia.platform.ia_platform_backend.security;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
-import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -77,7 +76,15 @@ public class JwtService {
     }
 
     private Key getSignKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(secret);
+        // Usar la clave directamente como string
+        // Esta es la clave que debe tener al menos 256 bits
+        // La clave debe ser de al menos 32 bytes (256 bits)
+        byte[] keyBytes = secret.getBytes();
+        if (keyBytes.length < 32) {
+            // Si la clave es demasiado corta, la expandimos
+            String longSecret = String.format("%-32s", secret).replace(' ', '0');
+            keyBytes = longSecret.getBytes();
+        }
         return Keys.hmacShaKeyFor(keyBytes);
     }
 }
