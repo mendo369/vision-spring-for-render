@@ -28,8 +28,11 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()  // Permitir autenticación
-                        .requestMatchers("/api/tools/**").permitAll() // Permitir acceso a herramientas
-                        .requestMatchers("/api/users/cliente").permitAll() // Permitir crear clientes
+                        .requestMatchers("/api/tools").permitAll()    // Permitir ver herramientas
+                        .requestMatchers("/api/tools/**").permitAll() // Permitir ver herramientas específicas
+                        .requestMatchers("/api/tools/best-selling").permitAll()
+                        .requestMatchers("/api/tools/popular").permitAll()
+                        .requestMatchers("/api/tools").hasRole("ADMIN") // Solo admins pueden crear .requestMatchers("/api/users/cliente").permitAll() // Permitir crear clientes
                         .requestMatchers("/api/users/revendedor").permitAll() // Permitir crear revendedores
                         .requestMatchers("/api/users/asesor").permitAll() // Permitir crear asesores
                         .requestMatchers("/api/users/admin").permitAll() // Permitir crear admins

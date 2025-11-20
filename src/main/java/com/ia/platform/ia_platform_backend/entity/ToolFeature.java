@@ -1,4 +1,5 @@
-// ToolFeature.java
+// src/main/java/com/ia.platform.ia_platform_backend/entity/ToolFeature.java
+
 package com.ia.platform.ia_platform_backend.entity;
 
 import jakarta.persistence.*;

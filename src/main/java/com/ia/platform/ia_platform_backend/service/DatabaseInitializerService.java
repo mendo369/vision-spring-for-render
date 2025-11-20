@@ -2,8 +2,10 @@
 
 package com.ia.platform.ia_platform_backend.service;
 
+import com.ia.platform.ia_platform_backend.entity.Category;
 import com.ia.platform.ia_platform_backend.entity.Role;
 import com.ia.platform.ia_platform_backend.entity.User;
+import com.ia.platform.ia_platform_backend.repository.CategoryRepository;
 import com.ia.platform.ia_platform_backend.repository.RoleRepository;
 import com.ia.platform.ia_platform_backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -18,12 +20,48 @@ import java.time.LocalDateTime;
 public class DatabaseInitializerService implements CommandLineRunner {
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
+    private final CategoryRepository categoryRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
     public void run(String... args) throws Exception {
+        initializeCategories();
         initializeRoles();
         initializeAdminUser();
+    }
+
+    private void initializeCategories() {
+        if (categoryRepository.count() == 0) {
+            Category combo = new Category();
+            combo.setNombre("combo");
+            combo.setDescripcion("Paquetes que incluyen múltiples herramientas");
+            categoryRepository.save(combo);
+
+            Category ai = new Category();
+            ai.setNombre("ai");
+            ai.setDescripcion("Herramientas de inteligencia artificial");
+            categoryRepository.save(ai);
+
+            Category productivity = new Category();
+            productivity.setNombre("productivity");
+            productivity.setDescripcion("Herramientas de productividad");
+            categoryRepository.save(productivity);
+
+            Category education = new Category();
+            education.setNombre("education");
+            education.setDescripcion("Herramientas educativas");
+            categoryRepository.save(education);
+
+            Category design = new Category();
+            design.setNombre("design");
+            design.setDescripcion("Herramientas de diseño");
+            categoryRepository.save(design);
+
+            Category video = new Category();
+            video.setNombre("video");
+            video.setDescripcion("Herramientas de edición de video");
+            categoryRepository.save(video);
+        }
     }
 
     private void initializeRoles() {

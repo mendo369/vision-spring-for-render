@@ -1,4 +1,5 @@
-// Tool.java
+// src/main/java/com/ia.platform.ia_platform_backend/entity/Tool.java
+
 package com.ia.platform.ia_platform_backend.entity;
 
 import jakarta.persistence.*;
@@ -13,7 +14,9 @@ import java.util.List;
 public class Tool extends BaseEntity {
     private String nombre;
     private String descripcionCorta;
+
     @Lob
+    @Column(name = "descripcion_larga", columnDefinition = "TEXT")
     private String descripcionLarga;
 
     @Column(precision = 12, scale = 2, nullable = false)
