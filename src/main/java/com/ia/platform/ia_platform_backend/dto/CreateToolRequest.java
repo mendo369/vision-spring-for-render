@@ -13,7 +13,7 @@ public class CreateToolRequest {
     private String descripcionLarga;
     private BigDecimal precio;
     private BigDecimal precioRevendedor;
-    private String categoriaNombre; // Nombre de la categoría
+    private String categoria; // Nombre de la categoría
     private String imagenUrl;
     private Boolean esMasVendido = false;
     private Boolean esMasPopular = false;

@@ -25,8 +25,8 @@ public class ToolService {
     @Transactional
     public ToolDto createTool(CreateToolRequest request) {
         // Buscar categoría por nombre
-        Category category = categoryRepository.findByNombre(request.getCategoriaNombre())
-                .orElseThrow(() -> new RuntimeException("Categoría no encontrada: " + request.getCategoriaNombre()));
+        Category category = categoryRepository.findByNombre(request.getCategoria())
+                .orElseThrow(() -> new RuntimeException("Categoría no encontrada: " + request.getCategoria()));
 
         Tool tool = new Tool();
         tool.setNombre(request.getNombre());
