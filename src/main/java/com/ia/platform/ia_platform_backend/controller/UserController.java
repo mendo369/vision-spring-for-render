@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users")
@@ -59,4 +60,9 @@ public class UserController {
         List<UserDto> users = userService.getAllUsers();
         return ResponseEntity.ok(users);
     }
+
+//    @GetMapping("/saldo") // Este endpoint puede ir aquí o en otro controller como PaymentController
+//    public ResponseEntity<Map<String, Object>> getUserBalance(/* @AuthenticationPrincipal User authenticatedUser */) {
+//        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Autenticación requerida para obtener el saldo."));
+//    }
 }

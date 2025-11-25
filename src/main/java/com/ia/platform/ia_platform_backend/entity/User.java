@@ -6,6 +6,7 @@ import lombok.Data;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Collection;
 
@@ -38,6 +39,10 @@ public class User extends BaseEntity implements UserDetails {
 
     @Column(name = "ultimo_login")
     private LocalDateTime ultimoLogin;
+
+    // --- Campo para el saldo ---
+    @Column(name = "saldo", precision = 10, scale = 2, nullable = false, columnDefinition = "DECIMAL(10,2) DEFAULT 0.00")
+    private BigDecimal saldo = BigDecimal.ZERO; // Inicializar en 0
 
     // Implementación de UserDetails
     @Override

@@ -40,6 +40,7 @@ public class UserService {
         user.setEstado("activo");
         user.setFechaRegistro(LocalDateTime.now());
 
+
         Role role = roleRepository.findByNombre(roleName)
                 .orElseThrow(() -> new RuntimeException("Rol no encontrado: " + roleName));
         user.setRole(role);
@@ -72,6 +73,7 @@ public class UserService {
         dto.setRoleName(user.getRole().getNombre());
         dto.setEstado(user.getEstado());
         dto.setFechaRegistro(user.getFechaRegistro());
+        dto.setSaldo(user.getSaldo());
         return dto;
     }
 }

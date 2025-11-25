@@ -3,6 +3,8 @@
 package com.ia.platform.ia_platform_backend.dto;
 
 import lombok.Data;
+
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -16,4 +18,5 @@ public class UserDto {
     private String roleName;
     private String estado;
     private LocalDateTime fechaRegistro;
+    private BigDecimal saldo;
 }
