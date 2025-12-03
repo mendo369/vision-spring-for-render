@@ -15,6 +15,7 @@ import javax.crypto.spec.SecretKeySpec;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.util.Base64;
@@ -36,6 +37,9 @@ public class PaymentService {
 
     @Value("${wompi.secret.key}") // LLAVE SECRETA
     private String wompiSecretKey;
+
+    @Value("${wompi.integrity.secret}")
+    private String wompiIntegritySecret;
 
     /**
      * Inicia una recarga de saldo con Wompi y guarda la transacción pendiente.
@@ -75,7 +79,7 @@ public class PaymentService {
      */
     public String generateWompiWebCheckoutForm(RechargeTransaction transaction, User user) {
         try {
-            String wompiReference = transaction.getReferenciaExterna(); // Usar la referencia generada por nosotros
+            String wompiReference = transaction.getReferenciaExterna();
             BigDecimal amount = transaction.getMonto();
             String customerEmail = user.getEmail();
             String customerFullName = user.getNombreCompleto();
@@ -83,8 +87,8 @@ public class PaymentService {
             // 1. Calcular el monto en centavos
             int amountInCents = amount.multiply(BigDecimal.valueOf(100)).intValue();
 
-            // 2. Generar la firma de integridad (esto es crítico y debe hacerse con la SECRET KEY del comercio en el backend)
-            String integritySignature = generateIntegritySignature(wompiReference, amountInCents, wompiSecretKey);
+            // 2. Generar la firma de integridad (ahora con SHA-256)
+            String integritySignature = generateIntegritySignature(wompiReference, amountInCents, wompiIntegritySecret);
 
             // 3. Construir el HTML del formulario
             return String.format(
@@ -97,45 +101,47 @@ public class PaymentService {
                       <input type="hidden" name="signature:integrity" value="%s" />
                       <input type="hidden" name="customer-data:email" value="%s" />
                       <input type="hidden" name="customer-data:full-name" value="%s" />
-                      <!-- Puedes añadir más campos ocultos según sea necesario -->
                       <button type="submit" class="w-full bg-gradient-to-r from-green-600 to-teal-600 text-white py-3 rounded-lg font-semibold hover:from-green-700 hover:to-teal-700 transition-all duration-300 flex items-center justify-center space-x-2">
                         <span>Pagar con Wompi</span>
                       </button>
                     </form>
                     """,
-                    wompiPublicKey, // LLAVE PÚBLICA
-                    amountInCents, // MONTO EN CENTAVOS
-                    wompiReference, // REFERENCIA DE PAGO (generada por ti)
-                    integritySignature, // FIRMA DE INTEGRIDAD (generada por ti con la SECRET KEY)
-                    customerEmail, // CORREO DEL PAGADOR
-                    customerFullName // NOMBRE DEL PAGADOR
+                    wompiPublicKey,
+                    amountInCents,
+                    wompiReference,
+                    integritySignature,
+                    customerEmail,
+                    customerFullName
             );
         } catch (Exception e) {
             log.error("Error generando formulario de Web Checkout", e);
             throw new RuntimeException("Error generando formulario de pago", e);
         }
     }
-
     /**
      * Genera la firma de integridad para el Web Checkout de Wompi.
      * @param reference Referencia del pago.
      * @param amountInCents Monto en centavos.
-     * @param secretKey Clave secreta de Wompi.
      * @return La firma codificada en Base64.
      */
-    private String generateIntegritySignature(String reference, int amountInCents, String secretKey) {
-        // El mensaje para firmar debe seguir el formato: reference + amount_in_cents
-        // Ej: "RECHARGA_1_1703123456789" + "25000"
-        String message = reference + amountInCents;
+    private String generateIntegritySignature(String reference, int amountInCents, String integritySecret) {
+        String message = reference + String.valueOf(amountInCents) + "COP" + integritySecret;
 
         try {
-            Mac mac = Mac.getInstance("HmacSHA256");
-            SecretKeySpec secretKeySpec = new SecretKeySpec(secretKey.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
-            mac.init(secretKeySpec);
-            byte[] hash = mac.doFinal(message.getBytes(StandardCharsets.UTF_8));
-            return Base64.getEncoder().encodeToString(hash);
-        } catch (NoSuchAlgorithmException | InvalidKeyException e) {
-            log.error("Error generando firma de integridad", e);
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(message.getBytes(StandardCharsets.UTF_8));
+            // Convertir a hexadecimal
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hash) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) {
+                    hexString.append('0');
+                }
+                hexString.append(hex);
+            }
+            return hexString.toString();
+        } catch (NoSuchAlgorithmException e) {
+            log.error("Error generando firma SHA-256", e);
             throw new RuntimeException("Error interno al generar la firma de pago.", e);
         }
     }

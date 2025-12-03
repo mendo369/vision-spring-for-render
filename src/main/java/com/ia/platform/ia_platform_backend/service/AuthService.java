@@ -25,6 +25,7 @@ public class AuthService {
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
 
+    // En AuthService.java
     public AuthResponse authenticate(AuthRequest request) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
@@ -39,7 +40,8 @@ public class AuthService {
         user.setUltimoLogin(LocalDateTime.now());
         userRepository.save(user);
 
-        String jwt = jwtService.generateToken(user);
+        // Asegúrate de que user es un objeto User que puede ser usado por JwtService
+        String jwt = jwtService.generateToken(user); // <-- Pasar el objeto User
         String refreshToken = jwtService.generateRefreshToken(user);
 
         UserDto userDto = mapToDto(user);

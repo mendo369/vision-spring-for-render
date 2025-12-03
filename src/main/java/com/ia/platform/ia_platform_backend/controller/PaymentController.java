@@ -6,6 +6,7 @@ import com.ia.platform.ia_platform_backend.dto.RechargeRequest;
 import com.ia.platform.ia_platform_backend.entity.RechargeTransaction;
 import com.ia.platform.ia_platform_backend.entity.User;
 import com.ia.platform.ia_platform_backend.repository.UserRepository;
+import com.ia.platform.ia_platform_backend.security.JwtService;
 import com.ia.platform.ia_platform_backend.service.PaymentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,33 +27,39 @@ public class PaymentController {
 
     private final PaymentService paymentService;
     private final UserRepository userRepository; // Inyectar UserRepository
+    private final JwtService jwtService;
 
     // Endpoint para iniciar una recarga de saldo con Wompi
+    // En PaymentController.java
+    // En PaymentController.java
     @PostMapping("/wompi/iniciar")
     public ResponseEntity<Map<String, Object>> iniciarRecargaWompi(@RequestBody RechargeRequest request,
-                                                                   @RequestHeader("Authorization") String authHeader) { // Obtener usuario logueado
-        // Extraer user ID del token (esto depende de tu implementación de seguridad JWT)
-        // Long userId = extractUserIdFromToken(authHeader);
-        Long userId = 4L; // Simulación
+                                                                   @RequestHeader("Authorization") String authHeader) {
+        String token = authHeader.replace("Bearer ", "");
+        String username = jwtService.extractUsername(token);
+
+        if (username == null || username.isEmpty()) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "Token inválido o sin username");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        }
 
         Map<String, Object> response = new HashMap<>();
         try {
             BigDecimal amount = new BigDecimal(request.getMonto());
-            RechargeTransaction transaction = paymentService.initiateWompiPayment(userId, amount);
 
-            // 1. Obtener el usuario para el formulario
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado para generar formulario"));
+            // Buscar el usuario por username en lugar de usar ID fijo
+            User user = userRepository.findByUsername(username)
+                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + username));
 
-            // 2. Generar el HTML del formulario de Web Checkout
+            RechargeTransaction transaction = paymentService.initiateWompiPayment(user.getId(), amount);
+
             String formHtml = paymentService.generateWompiWebCheckoutForm(transaction, user);
 
-            // 3. Devolver datos necesarios para el frontend completar el pago
             response.put("success", true);
             response.put("message", "Pago iniciado");
-            response.put("wompi_payment_form_html", formHtml); // <-- Devolver el HTML
-            // Opcional: también puedes devolver el ID si lo necesitas para otra cosa
-            // response.put("wompi_payment_intent_id", transaction.getReferenciaExterna());
+            response.put("wompi_payment_form_html", formHtml);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             response.put("success", false);
