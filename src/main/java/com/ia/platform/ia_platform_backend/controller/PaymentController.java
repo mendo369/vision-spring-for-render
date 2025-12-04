@@ -71,22 +71,33 @@ public class PaymentController {
     // Endpoint para el Webhook de Wompi (debes configurarlo en el panel de Wompi)
     @PostMapping("/webhooks/wompi")
     public ResponseEntity<String> handleWompiWebhook(@RequestBody Map<String, Object> webhookData) {
+        log.info("Webhook recibido: {}", webhookData);
+
         try {
-            // Extraer el ID de la intención de pago y el estado de la carga útil del webhook
-            // La estructura exacta depende de Wompi. Ejemplo:
+            // Extraer el tipo de evento
+            String eventType = (String) webhookData.get("event");
+
+            if (!"transaction.updated".equals(eventType)) {
+                log.info("Evento no manejado: {}", eventType);
+                return ResponseEntity.ok("OK"); // Aceptar otros eventos también con 200
+            }
+
+            // Extraer la data de la transacción
             Map<String, Object> data = (Map<String, Object>) webhookData.get("data");
-            Map<String, Object> paymentIntent = (Map<String, Object>) data.get("payment_intent");
-            String wompiPaymentIntentId = (String) paymentIntent.get("id");
-            String status = (String) paymentIntent.get("status");
+            Map<String, Object> transactionData = (Map<String, Object>) data.get("transaction");
 
-            // Llamar al servicio para manejar el webhook
-            paymentService.handleWompiWebhook(wompiPaymentIntentId, status);
+            String wompiTransactionId = (String) transactionData.get("id");
+            String status = (String) transactionData.get("status");
+            String reference = (String) transactionData.get("reference"); // 👈 Esta es la referencia que tú enviaste
 
-            // Devolver una respuesta 200 OK para confirmar recepción
+            log.info("Procesando webhook: Evento={}, ID={}, Status={}, Reference={}", eventType, wompiTransactionId, status, reference);
+
+            // Usar la referencia para buscar la transacción en tu base de datos
+            paymentService.handleWompiWebhookByReference(reference, status);
+
             return ResponseEntity.ok("OK");
         } catch (Exception e) {
             log.error("Error procesando webhook de Wompi: ", e);
-            // Wompi reintentará el webhook si no recibe un 200
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error");
         }
     }

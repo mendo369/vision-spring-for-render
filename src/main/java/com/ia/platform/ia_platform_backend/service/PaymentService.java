@@ -234,4 +234,33 @@ public class PaymentService {
 
         log.info("Compra procesada con saldo para usuario ID: {}. Total descontado: {}", user.getId(), totalAmount);
     }
+
+    @Transactional
+    public void handleWompiWebhookByReference(String reference, String status) {
+        log.info("Recibido webhook de Wompi para referencia: {}, Status: {}", reference, status);
+
+        RechargeTransaction transaction = rechargeTransactionRepository.findByReferenciaExterna(reference)
+                .orElseThrow(() -> new RuntimeException("Transacción no encontrada para referencia: " + reference));
+
+        if ("APPROVED".equalsIgnoreCase(status)) {
+            User user = transaction.getUser();
+            user.setSaldo(user.getSaldo().add(transaction.getMonto()));
+            userRepository.save(user);
+
+            transaction.setEstado(RechargeTransaction.TransactionStatus.COMPLETED);
+            transaction.setFechaActualizacion(LocalDateTime.now());
+            rechargeTransactionRepository.save(transaction);
+
+            log.info("Recarga completada para usuario ID: {}, monto: {}, transacción: {}", user.getId(), transaction.getMonto(), transaction.getId());
+
+        } else if ("DECLINED".equalsIgnoreCase(status) || "EXPIRED".equalsIgnoreCase(status) || "CANCELLED".equalsIgnoreCase(status)) {
+            transaction.setEstado(RechargeTransaction.TransactionStatus.FAILED);
+            transaction.setFechaActualizacion(LocalDateTime.now());
+            rechargeTransactionRepository.save(transaction);
+            log.info("Recarga fallida/cancelada para referencia: {}, estado: {}, transacción: {}", reference, status, transaction.getId());
+
+        } else {
+            log.warn("Estado de transacción Wompi no manejado: {} para referencia: {}, transacción: {}", status, reference, transaction.getId());
+        }
+    }
 }
