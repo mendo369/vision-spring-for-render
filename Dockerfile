@@ -1,10 +1,11 @@
-FROM openjdk:17-jdk-slim
+# Opción alternativa: compilar localmente primero
+FROM eclipse-temurin:17-jre-alpine
 
 WORKDIR /app
 
+# Primero compila localmente: mvn clean package -DskipTests
 COPY target/*.jar app.jar
 
 EXPOSE 8080
 
-# Usa el profile de Docker
-ENTRYPOINT ["java", "-jar", "app.jar", "--spring.profiles.active=docker"]
+ENTRYPOINT ["java", "-jar", "app.jar"]

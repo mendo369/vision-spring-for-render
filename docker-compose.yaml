@@ -1,42 +1,77 @@
 version: '3.8'
 
 services:
-  # Servicio de la base de datos MySQL
+  # Servicio de base de datos MySQL
   mysql-db:
     image: mysql:8.0
-    container_name: mysql-ia-platform
+    container_name: ia-platform-mysql
+    restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD:  # Deja vacío para coincidir con XAMPP
       MYSQL_DATABASE: ia_platform
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_USER: iauser
+      MYSQL_PASSWORD: iapassword
     ports:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      # Monta tu archivo SQL para inicializar la base de datos
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./init-scripts:/docker-entrypoint-initdb.d
     networks:
       - ia-platform-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 5s
+      retries: 10
+      interval: 5s
 
-  # Servicio de tu aplicación Spring Boot
+  # Servicio de la aplicación Spring Boot
   spring-app:
-    build: .
-    container_name: springboot-ia-platform
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ia-platform-backend
+    restart: unless-stopped
+    depends_on:
+      mysql-db:
+        condition: service_healthy
+    environment:
+      # Configuración de base de datos
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-db:3306/ia_platform?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: iauser
+      SPRING_DATASOURCE_PASSWORD: iapassword
+
+      # Configuración JPA
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: false
+
+      # Configuración JWT
+      JWT_SECRET: visionIAPlatformSpring
+      JWT_EXPIRATION: 86400000
+
+      # Configuración Wompi
+      WOMPI_API_URL: https://sandbox.wompi.co/api
+      WOMPI_SECRET_KEY: prv_test_Qxz0f0nRdu4JNvLQ8AC2oixMoNcJg3lY
+      WOMPI_PUBLIC_KEY: pub_test_aslwecGBegiaO5jqVup6F9bXlctoZI8D
+      WOMPI_INTEGRITY_SECRET: test_integrity_6ZJ9RuXu2QzsT1H6PFd9UzawXwZ8HzVX
+
+      # Configuración de aplicación
+      APP_FRONTEND_URL: http://localhost:3000
     ports:
       - "8080:8080"
-    depends_on:
-      - mysql-db
-    environment:
-      SPRING_PROFILES_ACTIVE: docker
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql-db:3306/ia_platform?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD:  # Debe coincidir con la contraseña de MySQL
-      SPRING_JPA_HIBERNATE_DDL_AUTO: none
     networks:
       - ia-platform-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/actuator/health || exit 1"]
+      timeout: 5s
+      retries: 10
+      interval: 10s
 
+# Volúmenes persistentes
 volumes:
   mysql_data:
+    driver: local
 
+# Red personalizada
 networks:
   ia-platform-network:
     driver: bridge
