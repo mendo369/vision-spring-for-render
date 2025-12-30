@@ -3,8 +3,10 @@
 package com.ia.platform.ia_platform_backend.controller;
 
 import com.ia.platform.ia_platform_backend.dto.RechargeRequest;
+import com.ia.platform.ia_platform_backend.dto.RechargeTransactionBasicDTO;
 import com.ia.platform.ia_platform_backend.entity.RechargeTransaction;
 import com.ia.platform.ia_platform_backend.entity.User;
+import com.ia.platform.ia_platform_backend.repository.RechargeTransactionRepository;
 import com.ia.platform.ia_platform_backend.repository.UserRepository;
 import com.ia.platform.ia_platform_backend.security.JwtService;
 import com.ia.platform.ia_platform_backend.service.PaymentService;
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -27,6 +30,7 @@ public class PaymentController {
 
     private final PaymentService paymentService;
     private final UserRepository userRepository; // Inyectar UserRepository
+    private final RechargeTransactionRepository transactionRepository;
     private final JwtService jwtService;
 
     // Endpoint para iniciar una recarga de saldo con Wompi
@@ -141,6 +145,28 @@ public class PaymentController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             response.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    @GetMapping("/history")
+    public ResponseEntity<Map<String, Object>> getUserRecharges(@RequestHeader("Authorization") String authHeader){
+        String token = authHeader.replace("Bearer ", "");
+        Long userId = jwtService.extractUserId(token);
+
+        Map<String, Object> response = new HashMap<>();
+
+        try {
+            List<RechargeTransactionBasicDTO> data = transactionRepository.findBasicByUserId(userId);
+
+            response.put("success", true);
+            response.put("message", "Historial obtenido.");
+            response.put("data", data);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.put("success", false);
+            response.put("message", e.getMessage());
             return ResponseEntity.badRequest().body(response);
         }
     }

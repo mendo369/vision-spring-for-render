@@ -36,6 +36,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/users/revendedor").permitAll() // Permitir crear revendedores
                         .requestMatchers("/api/users/asesor").permitAll() // Permitir crear asesores
                         .requestMatchers("/api/users/admin").permitAll() // Permitir crear admins
+                        .requestMatchers("/api/pagos/**").permitAll()
                         .anyRequest().authenticated() // Todo lo demás requiere autenticación
                 );
 
